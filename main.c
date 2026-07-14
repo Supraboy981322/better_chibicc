@@ -14,6 +14,7 @@ static bool opt_E;
 static bool opt_M;
 static bool opt_MD;
 static bool opt_MMD;
+static bool opt_run;
 static bool opt_MP;
 static bool opt_S;
 static bool opt_c;
@@ -26,6 +27,8 @@ static char *opt_MF;
 static char *opt_MT;
 static char *opt_o;
 
+static StringArray passed_args;
+
 static StringArray ld_extra_args;
 static StringArray std_include_paths;
 
@@ -36,7 +39,7 @@ static StringArray input_paths;
 static StringArray tmpfiles;
 
 static void usage(int status) {
-  fprintf(stderr, "chibicc [ -o <path> ] <file>\n");
+  fprintf(stderr, "chibicc [ -o <path> ] [ run ] <file>\n");
   exit(status);
 }
 
@@ -150,6 +153,17 @@ static void parse_args(int argc, char **argv) {
 
     if (!strcmp(argv[i], "--help"))
       usage(0);
+
+    if (!strcmp(argv[i], "run")) {
+      opt_run = true;
+      continue;
+    }
+
+    if (!strcmp(argv[i], "--")) {
+      assert(false); // TODO: this hangs
+      while (i < argc) strarray_push(&passed_args, argv[++i]);
+      continue;
+    }
 
     if (!strcmp(argv[i], "-verbose")) {
       opt_verbose = true;
@@ -356,6 +370,8 @@ static void parse_args(int argc, char **argv) {
 
     strarray_push(&input_paths, argv[i]);
   }
+
+  done:
 
   for (int i = 0; i < idirafter.len; i++)
     strarray_push(&include_paths, idirafter.data[i]);
@@ -907,5 +923,44 @@ int main(int argc, char **argv) {
 
   if (ld_args.len > 0)
     run_linker(&ld_args, opt_o ? opt_o : "a.out");
+
+  if (opt_run) {
+    strarray_push(&passed_args, NULL);
+    char** args = malloc(sizeof(char *) * passed_args.len+1);
+    args[0] = opt_o ? opt_o : "a.out";
+    for (int i = 0; i < passed_args.len; i++)
+      args[i+1] = passed_args.data[i];
+
+    char cwd[PATH_MAX];
+    assert(getcwd(cwd, sizeof(cwd)));
+    int dir_len = strlen(cwd);
+    cwd[dir_len] = '/';
+    cwd[dir_len+strlen(args[0])+1] = 0;
+    for (int i = 1; i < strlen(args[0])+1; i++)
+      cwd[dir_len+i] = args[0][i-1];
+    args[0] = cwd;
+    assert(file_exists(args[0]));
+
+    int rc = fork();
+    if (rc == -1) {
+      fprintf(stderr, "fork failed: %s\n", strerror(errno));
+      _exit(1);
+    }
+
+    if (rc == 0) {
+      execvp(args[0], args);
+      fprintf(stderr, "exec failed: %s: %s\n", args[0], strerror(errno));
+      free(args);
+      remove(opt_o ? opt_o : "a.out");
+      _exit(1);
+    }
+
+    // Wait for the child process to finish.
+    int status;
+    while (wait(&status) > 0);
+    if (status != 0) return 1;
+    remove(args[0]);
+    free(args);
+  }
   return 0;
 }
