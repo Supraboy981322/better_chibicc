@@ -705,6 +705,21 @@ static void run_linker(StringArray *inputs, char *output) {
   strarray_push(&arr, "-L/usr/lib");
   strarray_push(&arr, "-L/lib");
 
+  char *ldflags = getenv("LDFLAGS");
+  if (ldflags) {
+    int start = 0;
+    int f_len = strlen(ldflags);
+    for (int i = 0; i < f_len; i++) {
+      if (ldflags[i] == ' ' && start < i) {
+        ldflags[i] = 0;
+        strarray_push(&arr, format("-L%s", ldflags+start));
+        start = i+1;
+      }
+    }
+    if (start < f_len)
+      strarray_push(&arr, format("-L%s", ldflags+start));
+  }
+
   char* library_path = getenv("LIBRARY_PATH");
   if (library_path) {
     int start = 0;
@@ -712,6 +727,7 @@ static void run_linker(StringArray *inputs, char *output) {
       if (library_path[i] == ':' && start < i) {
         library_path[i] = 0;
         strarray_push(&arr, format("-L%s", library_path+start));
+        library_path[i] = ':';
         start = i+1;
       }
     }
