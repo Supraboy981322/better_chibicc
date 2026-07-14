@@ -929,6 +929,7 @@ static Token *preprocess2(Token *tok) {
         curl_easy_cleanup(curl);
         fclose(tmp);
         remove(filename);
+        error_tok(tok, "possibly invalid url");
         abort();
       }
       rewind(tmp);

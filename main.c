@@ -644,10 +644,19 @@ char* tryLibPathEnv(char* envvar, char* file) {
 //ugh... hard coded paths? (rookie)
 static char *find_libpath(void) {
   char* libpath = getenv("LIBRARY_PATH");
-  if (!libpath) goto hardcoded;
+  if (!libpath) {
+    if (opt_verbose)
+      fputs("LIBRARY_PATH not set (trying common paths)\n", stderr);
+    goto hardcoded;
+  }
 
   char* match = tryLibPathEnv(libpath, "crti.o");
-  if (!match) goto hardcoded;
+  if (!match) {
+    if (opt_verbose)
+      fputs("could not find crti.o in LIBRARY PATH (trying common paths)\n", stderr);
+    goto hardcoded;
+  }
+  if (opt_verbose) puts("found crti.o");
   return match;
 
   hardcoded: {
@@ -665,12 +674,19 @@ static char *find_gcc_libpath(void) {
   if (ld_path != NULL) {
     char* match = tryLibPathEnv(ld_path, "crtbegin.o");
     if (match) return match;
-  } else
+    fputs("crtbegin.o not found in LD_LIBRARY_PATH", stderr);
+  } else if (opt_verbose)
     fputs("LD_LIBRARY_PATH not set", stderr);
 
+  if (opt_verbose)
+    puts("trying common paths (for crtbegin.o)");
   char* hardcoded = "/usr/lib/gcc/*/crtbegin.o";
   char* path = find_file(hardcoded);
-  if (path) return strdup(dirname(path));
+  if (path) {
+    char* duped = strdup(dirname(path));
+    free(path);
+    return duped;
+  }
   error("gcc library path (where 'crtbegin.o' is) is not found");
 }
 
@@ -718,7 +734,8 @@ static void run_linker(StringArray *inputs, char *output) {
     }
     if (start < f_len)
       strarray_push(&arr, format("-L%s", ldflags+start));
-  }
+  } else if (opt_verbose)
+    fputs("LDFLAGS is not set\n", stderr);
 
   char* library_path = getenv("LIBRARY_PATH");
   if (library_path) {
@@ -733,7 +750,8 @@ static void run_linker(StringArray *inputs, char *output) {
     }
     if (start < strlen(library_path))
       strarray_push(&arr, format("-L%s", library_path+start));
-  }
+  } else if (opt_verbose)
+    fputs("LIBRARY_PATH is not set\n", stderr);
 
   if (!opt_static) {
     strarray_push(&arr, "-dynamic-linker");
@@ -768,11 +786,12 @@ static void run_linker(StringArray *inputs, char *output) {
   strarray_push(&arr, format("%s/crtn.o", libpath));
   strarray_push(&arr, NULL);
 
-  puts("about to run:");
-  for (int i = 0; i < arr.len; i++) if (arr.data[i]) {
-    printf("\t%s %c\n", arr.data[i], (arr.data[i+1]) ? '\\' : ' ');
+  if (opt_verbose) {
+    puts("about to run:");
+    for (int i = 0; i < arr.len; i++) if (arr.data[i])
+      printf("\t%s %c\n", arr.data[i], (arr.data[i+1]) ? '\\' : ' ');
+    puts("\n");
   }
-  puts("\n");
 
   free(libpath);
   free(gcc_libpath);
