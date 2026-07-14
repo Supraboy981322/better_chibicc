@@ -48,7 +48,7 @@ static bool take_arg(char *arg) {
     "-o", "-I", "-idirafter", "-include", "-x", "-MF", "-MT", "-Xlinker",
   };
 
-  for (int i = 0; i < sizeof(x) / sizeof(*x); i++)
+  for (size_t i = 0; i < sizeof(x) / sizeof(*x); i++)
     if (!strcmp(arg, x[i]))
       return true;
   return false;
@@ -370,8 +370,6 @@ static void parse_args(int argc, char **argv) {
 
     strarray_push(&input_paths, argv[i]);
   }
-
-  done:
 
   for (int i = 0; i < idirafter.len; i++)
     strarray_push(&include_paths, idirafter.data[i]);
@@ -755,8 +753,8 @@ static void run_linker(StringArray *inputs, char *output) {
 
   char* library_path = getenv("LIBRARY_PATH");
   if (library_path) {
-    int start = 0;
-    for (int i = 0; i < strlen(library_path); i++) {
+    size_t start = 0;
+    for (size_t i = 0; i < strlen(library_path); i++) {
       if (library_path[i] == ':' && start < i) {
         library_path[i] = 0;
         strarray_push(&arr, format("-L%s", library_path+start));
@@ -933,10 +931,10 @@ int main(int argc, char **argv) {
 
     char cwd[PATH_MAX];
     assert(getcwd(cwd, sizeof(cwd)));
-    int dir_len = strlen(cwd);
+    size_t dir_len = strlen(cwd);
     cwd[dir_len] = '/';
     cwd[dir_len+strlen(args[0])+1] = 0;
-    for (int i = 1; i < strlen(args[0])+1; i++)
+    for (size_t i = 1; i < strlen(args[0])+1; i++)
       cwd[dir_len+i] = args[0][i-1];
     args[0] = cwd;
     assert(file_exists(args[0]));
@@ -962,5 +960,6 @@ int main(int argc, char **argv) {
     remove(args[0]);
     free(args);
   }
+
   return 0;
 }
