@@ -21,11 +21,14 @@
           glibc
           glibc.static
           stdenv
+          curl.dev
+          pkg-config
         ];
       in {
         devShells.default = pkgs.mkShell {
           packages = deps;
           nativeBuildInputs = deps;
+          buildInputs = deps;
           env = let
             concat = paths: (builtins.concatStringsSep ":" paths) + ":";
             cc = pkgs.stdenv.cc;
@@ -33,10 +36,13 @@
             LIBRARY_PATH = concat [
               "${pkgs.glibc.out}/lib"
               "${pkgs.gcc.out}/lib"
+              "${pkgs.curl.out}/lib"
             ];
             LD_LIBRARY_PATH = concat [
               "${cc.cc}/lib/gcc/${pkgs.stdenv.hostPlatform.config}/${cc.version}"
             ];
+            CFLAGS = "-I${pkgs.curl.dev}/include";
+            LDFLAGS = "-L${pkgs.curl.out}/lib";
           };
         };
       })
