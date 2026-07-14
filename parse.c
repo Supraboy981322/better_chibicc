@@ -428,6 +428,7 @@ static Type *declspec(Token **rest, Token *tok, VarAttr *attr) {
     }
 
     // These keywords are recognized but ignored.
+    //  TODO (mod): don't ignore these
     if (consume(&tok, tok, "const") || consume(&tok, tok, "volatile") ||
         consume(&tok, tok, "auto") || consume(&tok, tok, "register") ||
         consume(&tok, tok, "restrict") || consume(&tok, tok, "__restrict") ||

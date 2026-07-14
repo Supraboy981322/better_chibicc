@@ -834,6 +834,10 @@ static void read_line_marker(Token **rest, Token *tok) {
   start->file->display_name = tok->str;
 }
 
+static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream) {
+  return fwrite(ptr, size, nmemb, (FILE *)stream);
+}
+
 // Visit all tokens in `tok` while evaluating preprocessing
 // macros and directives.
 static Token *preprocess2(Token *tok) {
@@ -870,7 +874,71 @@ static Token *preprocess2(Token *tok) {
       }
 
       char *path = search_include_paths(filename);
-      tok = include_file(tok, path ? path : filename, start->next->next);
+      tok = include_file(tok, ((path) ? path : filename), start->next->next);
+      continue;
+    }
+
+    if (equal(tok, "web_include")) {
+      bool is_dquote;
+      char *url = read_include_filename(&tok, tok->next, &is_dquote);
+
+      char *protocol = NULL;
+      int url_len = strlen(url);
+      for (int i = 0; i < url_len; i++) {
+        if (url[i] != ':') continue;
+        url[i] = 0;
+        protocol = strdup(url);
+        url[i] = ':';
+        break;
+      }
+      if (!protocol) error_tok(tok, "invalid url");
+
+      printf("(include_url) fetching |%s|\n", url);
+      
+      char *filename = strdup("/tmp/better-chibicc_web_include-XXXXXX");
+      int fd = mkstemp(filename);
+      if (fd == -1) {
+        fputs("failed to create tmpfile\n", stderr);
+        abort();
+      }
+      puts(filename);
+      
+      FILE *tmp = fdopen(fd, "rw+");
+      if (!tmp) {
+        fputs("failed to create tmpfile\n", stderr);
+        close(fd);
+        abort();
+      }
+
+      CURL *curl;
+      CURLcode res;
+      
+      curl = curl_easy_init();
+      if (!curl) {
+        fputs("failed to initialize libcurl\n", stderr);
+        abort();
+      }
+    
+      curl_easy_setopt(curl, CURLOPT_URL, url);
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, tmp);
+
+      res = curl_easy_perform(curl);
+      if (res != CURLE_OK) {
+        fprintf(stderr, "failed make request: %s\n", curl_easy_strerror(res));
+        curl_easy_cleanup(curl);
+        fclose(tmp);
+        remove(filename);
+        abort();
+      }
+      rewind(tmp);
+
+      tok = include_file(tok, filename, start->next->next);
+
+      fclose(tmp);
+      remove(filename);
+      curl_easy_cleanup(curl);
+
       continue;
     }
 
@@ -878,7 +946,7 @@ static Token *preprocess2(Token *tok) {
       bool ignore;
       char *filename = read_include_filename(&tok, tok->next, &ignore);
       char *path = search_include_next(filename);
-      tok = include_file(tok, path ? path : filename, start->next->next);
+      tok = include_file(tok, ((path) ? path : filename), start->next->next);
       continue;
     }
 

@@ -1,4 +1,5 @@
-CFLAGS=-std=c11 -g -fno-common -Wall -Wno-switch
+CFLAGS = -std=c11 -g -fno-common -Wall -Wno-switch -Wextra $(shell curl-config --cflags)
+LDFLAGS += $(shell curl-config --libs)
 
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
