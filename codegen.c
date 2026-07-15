@@ -1,4 +1,4 @@
-#include "chibicc.h"
+#include "oskar.h"
 
 #define GP_MAX 6
 #define FP_MAX 8

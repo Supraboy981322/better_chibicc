@@ -9,7 +9,7 @@ git reset --hard c75330605d4795850ec74fdc4d69aa5d92f76c00
 sed -i -e 1996,2011d configure.ac
 autoreconf
 
-CC=$chibicc ./configure
+CC=$oskar ./configure
 $make clean
 $make
 $make test

@@ -1,5 +1,5 @@
 {
-  description = "better chibicc";
+  description = "oskar";
 
   inputs = {
     # nixpkgs unstable for latest versions

@@ -1,4 +1,4 @@
-#include "chibicc.h"
+#include "oskar.h"
 
 // Input file
 static File *current_file;

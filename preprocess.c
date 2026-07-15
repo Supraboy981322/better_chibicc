@@ -22,7 +22,7 @@
 // standard's wording:
 // https://github.com/rui314/chibicc/wiki/cpp.algo.pdf
 
-#include "chibicc.h"
+#include "oskar.h"
 
 typedef struct MacroParam MacroParam;
 struct MacroParam {
@@ -896,7 +896,7 @@ static Token *preprocess2(Token *tok) {
 
       printf("(include_url) fetching |%s|\n", url);
 
-      char *filename = strdup("/tmp/better-chibicc_web_include-XXXXXX");
+      char *filename = strdup("/tmp/oskar_web_include-XXXXXX");
       int fd = mkstemp(filename);
       if (fd == -1) {
         fputs("failed to create tmpfile\n", stderr);
@@ -1154,7 +1154,7 @@ void init_macros(void) {
   define_macro("__alignof__", "_Alignof");
   define_macro("__amd64", "1");
   define_macro("__amd64__", "1");
-  define_macro("__chibicc__", "1");
+  define_macro("__oskar__", "1");
   define_macro("__const__", "const");
   define_macro("__gnu_linux__", "1");
   define_macro("__inline__", "inline");
