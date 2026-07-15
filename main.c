@@ -80,7 +80,7 @@ static FileType parse_opt_x(char *s) {
     return FILE_ASM;
   if (!strcmp(s, "none"))
     return FILE_NONE;
-  error("<command line>: unknown argument for -x: %s", s);
+  had_error("<command line>: unknown argument for -x: %s", s);
 }
 
 static char *quote_makefile(char *s) {
@@ -347,7 +347,7 @@ static void parse_args(int argc, char **argv) {
       continue;
 
     if (argv[i][0] == '-' && argv[i][1] != '\0')
-      error("unknown argument: %s", argv[i]);
+      had_error("unknown argument: %s", argv[i]);
 
     strarray_push(&input_paths, argv[i]);
   }
@@ -356,7 +356,7 @@ static void parse_args(int argc, char **argv) {
     strarray_push(&include_paths, idirafter.data[i]);
 
   if (input_paths.len == 0)
-    error("no input files");
+    had_error("no input files");
 
   // -E implies that the input is the C macro language.
   if (opts.E)
@@ -369,7 +369,7 @@ static FILE *open_file(char *path) {
 
   FILE *out = fopen(path, "w");
   if (!out)
-    error("cannot open output file: %s: %s", path, strerror(errno));
+    had_error("cannot open output file: %s: %s", path, strerror(errno));
   return out;
 }
 
@@ -397,7 +397,7 @@ static char *create_tmpfile(void) {
   char *path = strdup("/tmp/chibicc-XXXXXX");
   int fd = mkstemp(path);
   if (fd == -1)
-    error("mkstemp failed: %s", strerror(errno));
+    had_error("mkstemp failed: %s", strerror(errno));
   close(fd);
 
   strarray_push(&tmpfiles, path);
@@ -513,7 +513,7 @@ static void print_dependencies(void) {
 static Token *must_tokenize_file(char *path) {
   Token *tok = tokenize_file(path);
   if (!tok)
-    error("%s: %s", path, strerror(errno));
+    had_error("%s: %s", path, strerror(errno));
   return tok;
 }
 
@@ -541,7 +541,7 @@ static void cc1(void) {
     } else {
       path = search_include_paths(incl);
       if (!path)
-        error("-include: %s: %s", incl, strerror(errno));
+        had_error("-include: %s: %s", incl, strerror(errno));
     }
 
     Token *tok2 = must_tokenize_file(path);
@@ -660,7 +660,7 @@ static char *find_libpath(void) {
       return "/usr/lib/x86_64-linux-gnu";
     if (file_exists("/usr/lib64/crti.o"))
       return "/usr/lib64";
-    error("library path is not found");
+    had_error("library path is not found");
   }
 }
 
@@ -682,7 +682,7 @@ static char *find_gcc_libpath(void) {
     free(path);
     return duped;
   }
-  error("gcc library path (where 'crtbegin.o' is) is not found");
+  had_error("gcc library path (where 'crtbegin.o' is) is not found");
 }
 
 static void run_linker(StringArray *inputs, char *output) {
@@ -809,7 +809,7 @@ static FileType get_file_type(char *filename) {
   if (endswith(filename, ".s"))
     return FILE_ASM;
 
-  error("<command line>: unknown file extension: %s", filename);
+  had_error("<command line>: unknown file extension: %s", filename);
 }
 
 int main(int argc, char **argv) {
@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
   }
 
   if (input_paths.len > 1 && opts.o && (opts.c || opts.S | opts.E))
-    error("cannot specify '-o' with '-c,' '-S' or '-E' with multiple files");
+    had_error("cannot specify '-o' with '-c,' '-S' or '-E' with multiple files");
 
   StringArray ld_args = {};
 

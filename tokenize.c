@@ -13,7 +13,7 @@ static bool at_bol;
 static bool has_space;
 
 // Reports an error and exit.
-void error(char *fmt, ...) {
+void had_error(char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
   vfprintf(stderr, fmt, ap);

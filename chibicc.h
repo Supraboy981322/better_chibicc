@@ -93,7 +93,7 @@ struct Token {
   Token *origin;    // If this is expanded from a macro, the original token
 };
 
-noreturn void error(char *fmt, ...) __attribute__((format(printf, 1, 2)));
+noreturn void had_error(char *fmt, ...) __attribute__((format(printf, 1, 2)));
 noreturn void error_at(char *loc, char *fmt, ...) __attribute__((format(printf, 2, 3)));
 noreturn void error_tok(Token *tok, char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void warn_tok(Token *tok, char *fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -108,7 +108,7 @@ Token *tokenize(File *file);
 Token *tokenize_file(char *filename);
 
 #define unreachable() \
-  error("internal error at %s:%d", __FILE__, __LINE__)
+  had_error("internal error at %s:%d", __FILE__, __LINE__)
 
 //
 // preprocess.c
