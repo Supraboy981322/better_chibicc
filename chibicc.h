@@ -494,6 +494,7 @@ extern bool opt_fpic;
 extern bool opt_fcommon;
 extern char *base_file;
 
+bool file_exists(char *path);
 
 //
 //some helpers
