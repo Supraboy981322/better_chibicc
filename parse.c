@@ -25,6 +25,8 @@ typedef struct {
   Type *type_def;
   Type *enum_ty;
   int enum_val;
+  Type *error_ty;
+  int error_val;
 } VarScope;
 
 // Represents a block scope.
@@ -110,6 +112,7 @@ static bool is_typename(Token *tok);
 static Type *declspec(Token **rest, Token *tok, VarAttr *attr);
 static Type *typename(Token **rest, Token *tok);
 static Type *enum_specifier(Token **rest, Token *tok);
+static Type *error_specifier(Token **rest, Token *tok);
 static Type *typeof_specifier(Token **rest, Token *tok);
 static Type *type_suffix(Token **rest, Token *tok, Type *ty);
 static Type *declarator(Token **rest, Token *tok, Type *ty);
@@ -461,7 +464,7 @@ static Type *declspec(Token **rest, Token *tok, VarAttr *attr) {
     // Handle user-defined types.
     Type *ty2 = find_typedef(tok);
     if (equal(tok, "struct") || equal(tok, "union") || equal(tok, "enum") ||
-        equal(tok, "typeof") || ty2) {
+        equal(tok, "typeof") || equal(tok, "error") || ty2) {
       if (counter)
         break;
 
@@ -471,6 +474,8 @@ static Type *declspec(Token **rest, Token *tok, VarAttr *attr) {
         ty = union_decl(&tok, tok->next);
       } else if (equal(tok, "enum")) {
         ty = enum_specifier(&tok, tok->next);
+      } else if (equal(tok, "error")) {
+        ty = error_specifier(&tok, tok->next);
       } else if (equal(tok, "typeof")) {
         ty = typeof_specifier(&tok, tok->next);
       } else {
@@ -787,6 +792,48 @@ static Type *enum_specifier(Token **rest, Token *tok) {
     VarScope *sc = push_scope(name);
     sc->enum_ty = ty;
     sc->enum_val = val++;
+  }
+
+  if (tag)
+    push_tag_scope(tag, ty);
+  return ty;
+}
+
+static Type *error_specifier(Token **rest, Token *tok) {
+  Type *ty = error_type();
+
+  // Read a struct tag.
+  Token *tag = NULL;
+  if (tok->kind == TK_IDENT) {
+    tag = tok;
+    tok = tok->next;
+  }
+
+  if (tag && !equal(tok, "{")) {
+    Type *ty = find_tag(tag);
+    if (!ty)
+      error_tok(tag, "unknown error type");
+    if (ty->kind != TY_ERROR)
+      error_tok(tag, "not an error tag");
+    *rest = tok;
+    return ty;
+  }
+
+  tok = skip(tok, "{");
+
+  // Read an enum-list.
+  int i = 0;
+  int val = 0;
+  while (!consume_end(rest, tok)) {
+    if (i++ > 0)
+      tok = skip(tok, ",");
+
+    char *name = get_ident(tok);
+    tok = tok->next;
+
+    VarScope *sc = push_scope(name);
+    sc->error_ty = ty;
+    sc->error_val = val++;
   }
 
   if (tag)
@@ -1505,6 +1552,9 @@ static bool is_typename(Token *tok) {
       "const", "volatile", "auto", "register", "restrict", "__restrict",
       "__restrict__", "_Noreturn", "float", "double", "typeof", "inline",
       "_Thread_local", "__thread", "_Atomic",
+
+      //added
+      "error",
     };
 
     for (uint64_t i = 0; i < sizeof(kw) / sizeof(*kw); i++)
