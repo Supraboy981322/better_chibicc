@@ -44,6 +44,9 @@
             CFLAGS = "-I${pkgs.curl.dev}/include";
             LDFLAGS = "-L${pkgs.curl.out}/lib";
           };
+          shellHook = ''
+            export NIX_LDFLAGS="-L$(dirname $(g++ -print-file-name=libgcc_s.so)) $NIX_LDFLAGS"
+          '';
         };
       })
     );
