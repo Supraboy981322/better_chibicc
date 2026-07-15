@@ -14,7 +14,7 @@
   - [ ] fix shared linkage (probably a Nix problem)
 
 * runtime modes
-  - [ ] disabled (almost entirely; nothing that most C compilers don't do by default)
+  - disabled (almost entirely; nothing that most C compilers don't do by default)
     - [ ] =unreachable= just prints "reached invalid state" and aborts
   - [ ] safe
     - [ ] bounds checking
@@ -90,7 +90,7 @@
 ** misc
   - [ ] files are modules
   - [ ] default values for struct fields
-  - [ ] proper modern error handling
+  - [-] proper modern error handling
   - [ ] structs can contain functions
     - functions /cannot/ be declared within a struct =typedef=
       - for organization purposes: you should use separate modules (structs) containing local functions which are made public via a struct
@@ -150,10 +150,10 @@
         free(me_union.bar);
 #+END_SRC
 
-  - [ ] errors as values
+  - [-] errors as values
     - it's similar to Zig, in more ways than one
     - essentially a glorified enum
-    - [ ] comparison is identical to comparing an enum
+    - [-] comparison is identical to comparing an enum
       - the backing integers never collide, so this is safe (unless they share the same name)
     - [ ] errors can be grouped into a type (just called an error group)
       - /all/ errors are placed into a global group (simply named =error=)
