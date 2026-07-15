@@ -177,6 +177,7 @@ static void gen_addr(Node *node) {
   case ND_VLA_PTR:
     println("  lea %d(%%rbp), %%rax", node->var->offset);
     return;
+  default: no_op();
   }
 
   error_tok(node->tok, "not an lvalue");
@@ -206,6 +207,7 @@ static void load(Type *ty) {
   case TY_LDOUBLE:
     println("  fldt (%%rax)");
     return;
+  default: no_op();
   }
 
   char *insn = ty->is_unsigned ? "movz" : "movs";
@@ -246,6 +248,7 @@ static void store(Type *ty) {
   case TY_LDOUBLE:
     println("  fstpt (%%rdi)");
     return;
+  default: no_op();
   }
 
   if (ty->size == 1)
@@ -273,6 +276,7 @@ static void cmp_zero(Type *ty) {
     println("  fucomip");
     println("  fstp %%st(0)");
     return;
+  default: no_op();
   }
 
   if (is_integer(ty) && ty->size <= 4)
@@ -299,6 +303,7 @@ static int getTypeId(Type *ty) {
     return F64;
   case TY_LDOUBLE:
     return F80;
+  default: no_op();
   }
   return U64;
 }
@@ -720,6 +725,7 @@ static void gen_expr(Node *node) {
       println("  fldt -16(%%rsp)");
       return;
     }
+    default: no_op();
     }
 
     println("  mov $%ld, %%rax", node->val);
@@ -744,6 +750,7 @@ static void gen_expr(Node *node) {
     case TY_LDOUBLE:
       println("  fchs");
       return;
+    default: no_op();
     }
 
     println("  neg %%rax");
@@ -956,6 +963,7 @@ static void gen_expr(Node *node) {
       else
         println("  movswl %%ax, %%eax");
       return;
+    default: no_op();
     }
 
     // If the return type is a small struct, a value is returned
@@ -1000,6 +1008,7 @@ static void gen_expr(Node *node) {
     println("  xchg %s, (%%rdi)", reg_ax(sz));
     return;
   }
+  default: no_op();
   }
 
   switch (node->lhs->ty->kind) {
@@ -1048,6 +1057,7 @@ static void gen_expr(Node *node) {
       println("  and $1, %%al");
       println("  movzb %%al, %%rax");
       return;
+    default: no_op();
     }
 
     error_tok(node->tok, "invalid expression");
@@ -1087,10 +1097,12 @@ static void gen_expr(Node *node) {
 
       println("  movzb %%al, %%rax");
       return;
+    default: no_op();
     }
 
     error_tok(node->tok, "invalid expression");
   }
+  default: no_op();
   }
 
   gen_expr(node->rhs);
@@ -1180,6 +1192,7 @@ static void gen_expr(Node *node) {
     else
       println("  sar %%cl, %s", ax);
     return;
+  default: no_op();
   }
 
   error_tok(node->tok, "invalid expression");
@@ -1290,6 +1303,7 @@ static void gen_stmt(Node *node) {
         else
           copy_struct_mem();
         break;
+      default: no_op();
       }
     }
 
@@ -1301,6 +1315,7 @@ static void gen_stmt(Node *node) {
   case ND_ASM:
     println("  %s", node->asm_str);
     return;
+  default: no_op();
   }
 
   error_tok(node->tok, "invalid statement");

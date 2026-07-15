@@ -83,6 +83,7 @@ bool is_compatible(Type *t1, Type *t2) {
       return false;
     return t1->array_len < 0 && t2->array_len < 0 &&
            t1->array_len == t2->array_len;
+  default: no_op();
   }
   return false;
 }
@@ -303,5 +304,6 @@ void add_type(Node *node) {
       error_tok(node->cas_addr->tok, "pointer expected");
     node->ty = node->lhs->ty->base;
     return;
+  default: no_op();
   }
 }
