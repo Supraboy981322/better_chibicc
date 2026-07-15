@@ -838,6 +838,53 @@ static size_t write_callback(void *ptr, size_t size, size_t nmemb, void *stream)
   return fwrite(ptr, size, nmemb, (FILE *)stream);
 }
 
+static Token* include_web(char* url, Token* previous, Token *tok, Token* start) {
+  char *filename = strdup("/tmp/oskar_web_include-XXXXXX");
+  int fd = mkstemp(filename);
+  if (fd == -1) {
+    fputs("failed to create tmpfile\n", stderr);
+    abort();
+  }
+
+  FILE *tmp = fdopen(fd, "rw+");
+  if (!tmp) {
+    fputs("failed to create tmpfile\n", stderr);
+    close(fd);
+    abort();
+  }
+
+  CURL *curl;
+  CURLcode res;
+
+  curl = curl_easy_init();
+  if (!curl) {
+    fputs("failed to initialize libcurl\n", stderr);
+    abort();
+  }
+
+  curl_easy_setopt(curl, CURLOPT_URL, url);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, tmp);
+
+  res = curl_easy_perform(curl);
+  if (res != CURLE_OK) {
+    fprintf(stderr, "failed make request: %s\n", curl_easy_strerror(res));
+    curl_easy_cleanup(curl);
+    fclose(tmp);
+    remove(filename);
+    error_tok(previous, "possibly invalid url");
+    abort();
+  }
+  rewind(tmp);
+
+  tok = include_file(tok, filename, start->next->next);
+
+  fclose(tmp);
+  remove(filename);
+  curl_easy_cleanup(curl);
+  return tok;
+}
+
 // Visit all tokens in `tok` while evaluating preprocessing
 // macros and directives.
 static Token *preprocess2(Token *tok) {
@@ -895,52 +942,7 @@ static Token *preprocess2(Token *tok) {
       if (!protocol) error_tok(previous, "invalid url");
 
       printf("(include_url) fetching |%s|\n", url);
-
-      char *filename = strdup("/tmp/oskar_web_include-XXXXXX");
-      int fd = mkstemp(filename);
-      if (fd == -1) {
-        fputs("failed to create tmpfile\n", stderr);
-        abort();
-      }
-      puts(filename);
-
-      FILE *tmp = fdopen(fd, "rw+");
-      if (!tmp) {
-        fputs("failed to create tmpfile\n", stderr);
-        close(fd);
-        abort();
-      }
-
-      CURL *curl;
-      CURLcode res;
-
-      curl = curl_easy_init();
-      if (!curl) {
-        fputs("failed to initialize libcurl\n", stderr);
-        abort();
-      }
-
-      curl_easy_setopt(curl, CURLOPT_URL, url);
-      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-      curl_easy_setopt(curl, CURLOPT_WRITEDATA, tmp);
-
-      res = curl_easy_perform(curl);
-      if (res != CURLE_OK) {
-        fprintf(stderr, "failed make request: %s\n", curl_easy_strerror(res));
-        curl_easy_cleanup(curl);
-        fclose(tmp);
-        remove(filename);
-        error_tok(previous, "possibly invalid url");
-        abort();
-      }
-      rewind(tmp);
-
-      tok = include_file(tok, filename, start->next->next);
-
-      fclose(tmp);
-      remove(filename);
-      curl_easy_cleanup(curl);
-
+      tok = include_web(url, previous, tok, start);
       continue;
     }
 
