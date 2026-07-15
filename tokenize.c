@@ -148,7 +148,7 @@ static int read_punct(char *p) {
     "||", "<<", ">>", "##",
   };
 
-  for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
+  for (uint64_t i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     if (startswith(p, kw[i]))
       return strlen(kw[i]);
 
@@ -168,9 +168,12 @@ static bool is_keyword(Token *tok) {
       "__restrict", "__restrict__", "_Noreturn", "float", "double",
       "typeof", "asm", "_Thread_local", "__thread", "_Atomic",
       "__attribute__",
+
+      //added keywords
+      "error"
     };
 
-    for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
+    for (uint64_t i = 0; i < sizeof(kw) / sizeof(*kw); i++)
       hashmap_put(&map, kw[i], (void *)1);
   }
 

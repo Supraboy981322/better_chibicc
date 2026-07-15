@@ -1333,7 +1333,7 @@ static Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token
   if (ty->kind == TY_ARRAY) {
     Node *node = new_node(ND_NULL_EXPR, tok);
     for (int i = 0; i < ty->array_len; i++) {
-      InitDesg desg2 = {desg, i};
+      InitDesg desg2 = {desg, i, NULL, NULL};
       Node *rhs = create_lvar_init(init->children[i], ty->base, &desg2, tok);
       node = new_binary(ND_COMMA, node, rhs, tok);
     }
@@ -1344,7 +1344,7 @@ static Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token
     Node *node = new_node(ND_NULL_EXPR, tok);
 
     for (Member *mem = ty->members; mem; mem = mem->next) {
-      InitDesg desg2 = {desg, 0, mem};
+      InitDesg desg2 = {desg, 0, mem, NULL};
       Node *rhs = create_lvar_init(init->children[mem->idx], mem->ty, &desg2, tok);
       node = new_binary(ND_COMMA, node, rhs, tok);
     }
@@ -1353,7 +1353,7 @@ static Node *create_lvar_init(Initializer *init, Type *ty, InitDesg *desg, Token
 
   if (ty->kind == TY_UNION) {
     Member *mem = init->mem ? init->mem : ty->members;
-    InitDesg desg2 = {desg, 0, mem};
+    InitDesg desg2 = {desg, 0, mem, NULL};
     return create_lvar_init(init->children[mem->idx], mem->ty, &desg2, tok);
   }
 
@@ -1507,7 +1507,7 @@ static bool is_typename(Token *tok) {
       "_Thread_local", "__thread", "_Atomic",
     };
 
-    for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
+    for (uint64_t i = 0; i < sizeof(kw) / sizeof(*kw); i++)
       hashmap_put(&map, kw[i], (void *)1);
   }
 
@@ -1897,6 +1897,7 @@ static int64_t eval2(Node *node, char ***label) {
     return eval(node->lhs) || eval(node->rhs);
   case ND_CAST: {
     int64_t val = eval2(node->lhs, label);
+    // TODO: these conversions are likely cancelling-out
     if (is_integer(node->ty)) {
       switch (node->ty->size) {
       case 1: return node->ty->is_unsigned ? (uint8_t)val : (int8_t)val;
