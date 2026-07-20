@@ -1779,7 +1779,7 @@ static Node *stmt(Token **rest, Token *tok) {
   }
 
   if (equal(tok, "defer")) {
-    Node *node = new_node(ND_LABEL, tok);
+    Node* node = new_node(ND_LABEL, tok);
     node->unique_label = new_unique_name();
     node->body = stmt(rest, tok->next);
     node->goto_next = scope->defers;
@@ -1788,7 +1788,7 @@ static Node *stmt(Token **rest, Token *tok) {
       node->body_end = c;
     }
     scope->defers = node;
-    Token *semi = new_token(TK_PUNCT, 0, ";");
+    Token* semi = new_token(TK_PUNCT, 0, ";");
     semi->next = (*rest)->next;
     *tok = **rest;
     return stmt(rest, tok);

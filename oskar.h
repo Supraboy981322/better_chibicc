@@ -61,6 +61,8 @@ typedef enum {
   TK_EOF,     // End-of-file markers
 } TokenKind;
 
+extern const char* token_kind_str[];
+
 typedef struct {
   char *name;
   int file_no;

@@ -19,6 +19,16 @@ static char *output_file;
 static StringArray input_paths;
 static StringArray tmpfiles;
 
+const char* token_kind_str[] = {
+  [TK_IDENT] = "IDENT",
+  [TK_PUNCT] = "PUNCT",
+  [TK_KEYWORD] = "KEYWORD",
+  [TK_STR] = "STR",
+  [TK_NUM] = "NUM",
+  [TK_PP_NUM] = "PP_NUM",
+  [TK_EOF] = "EOF",
+};
+
 static void usage(int status) {
   fprintf(stderr, "oskar [ -o <path> ] [ run ] <file>\n");
   exit(status);
@@ -450,13 +460,21 @@ static void run_cc1(int argc, char **argv, char *input, char *output) {
 static void print_tokens(Token *tok) {
   FILE *out = open_file(opts.o ? opts.o : "-");
 
+  if (opts.verbose)
+    fputs("(-E) with '-verbose', printed tokens have alternate format\n\n", stderr);
+
   int line = 1;
   for (; tok->kind != TK_EOF; tok = tok->next) {
-    if (line > 1 && tok->at_bol)
-      fprintf(out, "\n");
-    if (tok->has_space && !tok->at_bol)
-      fprintf(out, " ");
-    fprintf(out, "%.*s", tok->len, tok->loc);
+    if (opts.verbose) {
+      const char* kind = token_kind_str[tok->kind];
+      fprintf(out, "(%s) %.*s\n", kind, tok->len, tok->loc);
+    } else {
+      if (line > 1 && tok->at_bol)
+        fprintf(out, "\n");
+      if (tok->has_space && !tok->at_bol)
+        fprintf(out, " ");
+      fprintf(out, "%.*s", tok->len, tok->loc);
+    }
     line++;
   }
   fprintf(out, "\n");
