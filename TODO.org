@@ -90,6 +90,8 @@
 ** misc
   - [ ] files are modules
   - [ ] default values for struct fields
+  - [ ] slices
+    - marked with (for example) =char[S]=
   - [-] proper modern error handling
   - [ ] structs can contain functions
     - functions /cannot/ be declared within a struct =typedef=
