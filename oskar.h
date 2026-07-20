@@ -106,6 +106,7 @@ File *new_file(char *name, int file_no, char *contents);
 Token *tokenize_string_literal(Token *tok, Type *basety);
 Token *tokenize(File *file);
 Token *tokenize_file(char *filename);
+Token *new_token(TokenKind kind, char *start, char *end);
 
 #define unreachable() \
   had_error("internal error at %s:%d", __FILE__, __LINE__)
@@ -252,6 +253,7 @@ struct Node {
 
   // Block or statement expression
   Node *body;
+  Node *body_end;
 
   // Struct member access
   Member *member;

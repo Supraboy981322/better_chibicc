@@ -12,6 +12,8 @@ static bool at_bol;
 // True if the current position follows a space character
 static bool has_space;
 
+Token *new_token(TokenKind kind, char *start, char *end);
+
 // Reports an error and exit.
 void had_error(char *fmt, ...) {
   va_list ap;
@@ -97,7 +99,7 @@ bool consume(Token **rest, Token *tok, char *str) {
 }
 
 // Create a new token.
-static Token *new_token(TokenKind kind, char *start, char *end) {
+Token *new_token(TokenKind kind, char *start, char *end) {
   Token *tok = calloc(1, sizeof(Token));
   tok->kind = kind;
   tok->loc = start;

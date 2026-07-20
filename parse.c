@@ -38,6 +38,8 @@ struct Scope {
   // the other is for struct/union/enum tags.
   HashMap vars;
   HashMap tags;
+
+  Node *defers;
 };
 
 // Variable attributes such as typedef or extern.
@@ -97,7 +99,6 @@ static Obj *current_fn;
 // Lists of all goto statements and labels in the curent function.
 static Node *gotos;
 static Node *labels;
-static Node *defers;
 
 // Current "goto" and "continue" jump targets.
 static char *brk_label;
@@ -1781,9 +1782,15 @@ static Node *stmt(Token **rest, Token *tok) {
     Node *node = new_node(ND_LABEL, tok);
     node->unique_label = new_unique_name();
     node->body = stmt(rest, tok->next);
-    node->goto_next = defers;
-    defers = node;
-    *tok = *(*rest++)->next;
+    node->goto_next = scope->defers;
+    for (Node* c = node->body; c; c = c->next) {
+      node->end++;
+      node->body_end = c;
+    }
+    scope->defers = node;
+    Token *semi = new_token(TK_PUNCT, 0, ";");
+    semi->next = (*rest)->next;
+    *tok = **rest;
     return stmt(rest, tok);
   }
 
@@ -1856,13 +1863,13 @@ static Node *compound_stmt(Token **rest, Token *tok) {
     add_type(cur);
   }
 
-  leave_scope();
-
   node->body = head.next;
-  if (defers) {
-    cur = cur->next = defers->body;
-    defers = defers->goto_next;
+  while (scope->defers) {
+    cur = cur->next = scope->defers->body;
+    scope->defers = scope->defers->goto_next;
   }
+
+  leave_scope();
 
   *rest = tok->next;
   return node;
